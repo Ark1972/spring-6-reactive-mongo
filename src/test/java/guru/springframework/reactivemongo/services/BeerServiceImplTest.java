@@ -2,14 +2,21 @@ package guru.springframework.reactivemongo.services;
 
 import guru.springframework.reactivemongo.domain.Beer;
 import guru.springframework.reactivemongo.mappers.BeerMapper;
-import guru.springframework.reactivemongo.mappers.BeerMapperImpl;
+import guru.springframework.reactivemongo.mappers.BeerMapper;
 import guru.springframework.reactivemongo.model.BeerDTO;
 import guru.springframework.reactivemongo.repositories.BeerRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ContextConfiguration;
+import org.testcontainers.containers.MongoDBContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
@@ -21,6 +28,7 @@ import static org.awaitility.Awaitility.await;
 
 @SpringBootTest
 class BeerServiceImplTest {
+
 
     @Autowired
     BeerService beerService;
@@ -36,6 +44,33 @@ class BeerServiceImplTest {
     @BeforeEach
     void setUp() {
         beerDTO = beerMapper.beerToBeerDto(getTestBeer());
+    }
+
+    @Test
+    @Order(0)
+    void findFirstByBeerStyle() {
+        AtomicReference<BeerDTO> atomicDto = new AtomicReference<>();
+        beerService.findFirstByBeerStyle(beerDTO.getBeerStyle())
+                .subscribe(b -> {
+                assertThat(b).isNotNull();
+                assertThat(b.getBeerStyle()).isEqualTo(beerDTO.getBeerStyle());
+                atomicDto.set(b);
+           });
+        await().until(() -> atomicDto.get() != null);
+    }
+
+    @Test
+    void findFirstByBeerName() {
+        AtomicReference<BeerDTO> atomicDto = new AtomicReference<>();
+
+        beerService.findFirstByBeerName(beerDTO.getBeerName())
+           .subscribe(b -> {
+                assertThat(b).isNotNull();
+                assertThat(b.getBeerName()).isEqualTo(beerDTO.getBeerName());
+                atomicDto.set(b);
+           });
+        await().until(() -> atomicDto.get() != null);
+        System.out.println(atomicDto.get());
     }
 
     @Test
@@ -122,8 +157,8 @@ class BeerServiceImplTest {
         return beerService.saveBeer(Mono.just(getTestBeerDto())).block();
     }
 
-    public static BeerDTO getTestBeerDto(){
-        return new BeerMapperImpl().beerToBeerDto(getTestBeer());
+    public BeerDTO getTestBeerDto(){
+        return beerMapper.beerToBeerDto(getTestBeer());
     }
 
     public static Beer getTestBeer() {

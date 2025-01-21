@@ -8,6 +8,11 @@ import reactor.core.publisher.Mono;
  * Created by jt, Spring Framework Guru.
  */
 public interface BeerService {
+
+    Flux<BeerDTO> findFirstByBeerStyle(String beerStyle);
+
+    Mono<BeerDTO> findFirstByBeerName(String beerName);
+
     Flux<BeerDTO> listBeers();
     Mono<BeerDTO> saveBeer(Mono<BeerDTO> beerDto);
 
